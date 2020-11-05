@@ -1,0 +1,29 @@
+// 
+// Siglent binary format, 010 Editor template
+//
+// 2020.11.04  darell tan
+//
+
+LittleEndian();
+
+local int i;
+
+byte unknown[16];
+
+for (i = 0; i < 4; i++) {
+    double scale <comment="ch vertical scale (mV/div)">;
+    FSkip(8);
+}
+
+for (i = 0; i < 4; i++) {
+    double offset <comment="ch vertical offset (mV)">;
+    FSkip(8);
+}
+
+FSeek(0xD4); double horizScaling  <comment="horizontal scale (seconds/div)">;
+FSeek(0xE4); double triggerDelay <comment="trigger pos on screen (seconds)">;
+
+FSeek(0xF4);
+uint32 numPoints   <comment="number of points">;
+double sampleRate  <comment="samples/sec">;
+
