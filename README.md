@@ -1,7 +1,7 @@
 siglent-bin2sr
 ================
 
-Converts binary files exported from the *Siglent SDS-1000* series oscilloscope into the Sigrok format.
+Converts binary files exported from the *Siglent SDS-1000X-E* series oscilloscope into the Sigrok format.
 This allows you to view the waveforms in [PulseView](https://sigrok.org/wiki/PulseView), which is free and open-source.
 
 You can export the waveform in this format using the *Save/Recall* button to a thumbdrive if you are working at a remote location, or over LAN if you connect your scope to the network.
@@ -12,6 +12,18 @@ What this utility does is to also convert the values to the actual voltage value
 This saves you several steps from cutting the binary file to setting up the raw import in PulseView.
 
 Siglent also provides a Windows tool from the scope's web UI to convert the binary file to a CSV file, but being a non-standard intermediate file is not helpful -- it is large (~300 MB!) and there are no tools to directly analyze, visualize or operate on it.
+
+Installation
+=============
+
+Install [Go](https://golang.org/) and run the following command:
+
+    go get -v github.com/geekman/siglent-bin2sr
+
+The source code and its dependencies will be downloaded and a binary built at 
+`$GOPATH/bin`.
+
+Alternatively, pre-built binaries may be available under the [Releases](https://github.com/geekman/siglent-bin2sr/releases) section.
 
 Usage
 ======
@@ -39,7 +51,7 @@ Known Issues
 - There seems to be some slight voltage offset.
   I haven't yet determined whether this is due to my incorrect understanding of the binary file values, or the scope is exporting incorrect values.
 
-- There's no flag for use of a 10X probe setting, so this needs to be applied manually using the `-10x` flag.
+- There's no indication when a 10X probe is used, so this needs to be applied manually using the `-10x` flag.
 
 - Currently only one channel is supported.
   I haven't really spent too much time figuring out how the points are split between multiple channels.
