@@ -30,6 +30,7 @@ var (
 	use_10x     = flag.Bool("10x", false, "apply 10x multiplier")
 	writeRaw    = flag.Bool("raw", false, "write a raw values file")
 	applyOffset = flag.Bool("offset", true, "apply offset to values")
+	startOffset = flag.Float64("start-at", 0, "starting offset (in milliseconds) to process from")
 	decimate    = flag.Int("decimate", 1, "apply decimation factor to waveform")
 )
 
@@ -153,14 +154,26 @@ func main() {
 	decimateSkip := uint(*decimate) - 1
 
 	rbuf := bufio.NewReader(file)
-	for i := uint(0); i < uint(dataSpec.Points); i++ {
+	i := uint(0)
+
+	// discard points until starting offset
+	if *startOffset > 0 {
+		startPoint := uint(*startOffset * dataSpec.SampleRate / 1000 /*ms*/)
+		i = startPoint
+		if _, err := rbuf.Discard(int(startPoint)); err != nil {
+			fmt.Printf("cannot skip to start offset: %v\n", err)
+			return
+		}
+	}
+
+	for ; i < uint(dataSpec.Points); i++ {
 		v, err := rbuf.ReadByte()
 		if err != nil {
 			panic(err)
 		}
 
 		// perform decimation
-		if decimateSkip > 0 {
+		if decimateSkip > 0 && i+decimateSkip < uint(dataSpec.Points) {
 			i += decimateSkip
 			_, err = rbuf.Discard(int(decimateSkip))
 			if err != nil {
