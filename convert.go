@@ -181,7 +181,7 @@ func main() {
 			}
 		}
 
-		v2 := float64(int(v)-128) * hdr.Scale1 * 8 / 256
+		v2 := float64(int(v)-128) * hdr.Scale1 * 10.7 / 256
 		v2 -= offset
 
 		// writes converted raw values directly to output file
