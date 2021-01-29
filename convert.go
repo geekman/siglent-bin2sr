@@ -22,8 +22,12 @@ import (
 type Header struct {
 	_ [16]byte
 
-	Scale1, _, Scale2, _, Scale3, _, Scale4, _     float64
-	Offset1, _, Offset2, _, Offset3, _, Offset4, _ float64
+	Scales [4]struct {
+		N, _ float64
+	}
+	Offsets [4]struct {
+		N, _ float64
+	}
 }
 
 var (
@@ -67,7 +71,7 @@ type SrValueWriter struct {
 }
 
 func (s *SrValueWriter) Write(v float32) error { return s.ch.Write(v) }
-func (s *SrValueWriter) Close() error          { return s.file.Close() }
+func (s *SrValueWriter) Close() error          { return nil }
 
 //////////////////////////////////////////////////
 
@@ -119,79 +123,110 @@ func main() {
 	}
 
 	var output ValueWriter
+	var sr *SrZip
 	if *writeRaw {
 		output, err = NewFileValueWriter(fname + "-raw.bin")
 		if err != nil {
 			panic(err)
 		}
 	} else {
-		sr, err := NewSrZipFile(fname + ".sr")
+		sr, err = NewSrZipFile(fname + ".sr")
 		if err != nil {
 			fmt.Printf("cant create srzip: %v\n", err)
 			return
 		}
 
 		sr.SampleRate = uint(dataSpec.SampleRate / float64(*decimate))
-		ch := sr.NewAnalogChannel("CH 1")
-
-		output = &SrValueWriter{sr, ch}
-	}
-
-	// pre-process probe multplier
-	if *use_10x {
-		hdr.Scale1 = 10 * hdr.Scale1
-		hdr.Offset1 = 10 * hdr.Offset1
-	}
-
-	fmt.Printf("scale: %f\noffset: %f\n", hdr.Scale1, hdr.Offset1)
-
-	// should we apply offset voltage? (used for debugging)
-	offset := float64(0)
-	if *applyOffset {
-		offset = hdr.Offset1
+		defer sr.Close()
 	}
 
 	decimateSkip := uint(*decimate) - 1
 
 	rbuf := bufio.NewReader(file)
-	i := uint(0)
 
-	// discard points until starting offset
-	if *startOffset > 0 {
-		startPoint := uint(*startOffset * dataSpec.SampleRate / 1000 /*ms*/)
-		i = startPoint
-		if _, err := rbuf.Discard(int(startPoint)); err != nil {
-			fmt.Printf("cannot skip to start offset: %v\n", err)
-			return
-		}
-	}
-
-	for ; i < uint(dataSpec.Points); i++ {
-		v, err := rbuf.ReadByte()
-		if err != nil {
-			panic(err)
+	for chNum := 1; chNum <= 4; chNum++ {
+		if _, err = rbuf.Peek(1); err == io.EOF {
+			break
+		} else if *writeRaw && chNum > 1 {
+			// FIXME only output first channel's data to raw file
+			break
 		}
 
-		// perform decimation
-		if decimateSkip > 0 && i+decimateSkip < uint(dataSpec.Points) {
-			i += decimateSkip
-			_, err = rbuf.Discard(int(decimateSkip))
+		fmt.Printf("writing channel %d...\n", chNum)
+
+		scale := hdr.Scales[chNum-1].N
+		offset := hdr.Offsets[chNum-1].N
+
+		// pre-process probe multplier
+		if *use_10x {
+			scale *= 10
+			offset *= 10
+		}
+
+		fmt.Printf(" scale: %f\noffset: %f\n", scale, offset)
+
+		// should we apply offset voltage? (used for debugging)
+		if !*applyOffset {
+			offset = 0
+		}
+
+		if !*writeRaw {
+			ch := sr.NewAnalogChannel(fmt.Sprintf("Ch %d", chNum))
+			output = &SrValueWriter{sr, ch}
+		}
+
+		i := uint(0)
+
+		// discard points until starting offset
+		if *startOffset > 0 {
+			startPoint := uint(*startOffset * dataSpec.SampleRate / 1000 /*ms*/)
+			i = startPoint
+			if _, err := rbuf.Discard(int(startPoint)); err != nil {
+				fmt.Printf("cannot skip to start offset: %v\n", err)
+				return
+			}
+		}
+
+		// compute points for key horiz points for debugging
+		//hDivPoints := uint(dataSpec.Points) / 14
+		//mid1Pt := hDivPoints / 2
+		//mid2Pt := mid1Pt + hDivPoints
+
+		valueScaler := scale * 10.7 / 256
+
+		for ; i < uint(dataSpec.Points); i++ {
+			v, err := rbuf.ReadByte()
+			if err != nil {
+				panic(err)
+			}
+
+			// perform decimation
+			if decimateSkip > 0 && i+decimateSkip < uint(dataSpec.Points) {
+				i += decimateSkip
+				_, err = rbuf.Discard(int(decimateSkip))
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			v2 := float64(int(v)-128) * valueScaler
+			v2 -= offset
+
+			//if i >= mid1Pt && i <= mid1Pt+5 {
+			//	fmt.Printf("%03d %f -> %f\n", v, v2, float32(v2))
+			//} else if i >= mid2Pt && i <= mid2Pt+5 {
+			//	fmt.Printf("%03d %f -> %f\n", v, v2, float32(v2))
+			//}
+
+			// writes converted raw values directly to output file
+			err = output.Write(float32(v2))
 			if err != nil {
 				panic(err)
 			}
 		}
 
-		v2 := float64(int(v)-128) * hdr.Scale1 * 10.7 / 256
-		v2 -= offset
-
-		// writes converted raw values directly to output file
-		err = output.Write(float32(v2))
-		if err != nil {
+		if err := output.Close(); err != nil {
 			panic(err)
 		}
-	}
-
-	if err := output.Close(); err != nil {
-		panic(err)
 	}
 }

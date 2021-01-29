@@ -27,3 +27,8 @@ FSeek(0xF4);
 uint32 numPoints   <comment="number of points">;
 double sampleRate  <comment="samples/sec">;
 
+FSeek(0x800);
+if (!FEof()) byte points1[numPoints]  <comment="ch 1 data points">;
+if (!FEof()) byte points2[numPoints]  <comment="ch 2 data points">;
+if (!FEof()) byte points3[numPoints]  <comment="ch 3 data points">;
+if (!FEof()) byte points4[numPoints]  <comment="ch 4 data points">;
