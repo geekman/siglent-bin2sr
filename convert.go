@@ -3,7 +3,7 @@
 // The file can be saved onto a thumbdrive or via the web UI using the
 // "Save/Recall" feature on the oscilloscope.
 //
-// Copyright 2020 Darell Tan. All rights reserved.
+// Copyright 2020-2021 Darell Tan. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the README file.
 //

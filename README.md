@@ -53,9 +53,6 @@ Known Issues
 
 - There's no indication when a 10X probe is used, so this needs to be applied manually using the `-10x` flag.
 
-- Currently only one channel is supported.
-  I haven't really spent too much time figuring out how the points are split between multiple channels.
-
 I did not want to invest too much time into reversing the format as it is not guaranteed to be "stable" by Siglent and may change in future.
 The file format also does not contain any signatures (magic bytes) to uniquely identify it.
 
@@ -68,7 +65,7 @@ License
 
 **siglent-bin2sr is licensed under the 3-clause ("modified") BSD License.**
 
-Copyright (C) 2020 Darell Tan
+Copyright (C) 2020-2021 Darell Tan
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
