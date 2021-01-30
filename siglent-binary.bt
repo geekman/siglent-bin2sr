@@ -27,6 +27,14 @@ FSeek(0xF4);
 uint32 numPoints   <comment="number of points">;
 double sampleRate  <comment="samples/sec">;
 
+// no idea what these are, but they just look like similar blocks
+struct {
+    uint32 a;
+    uint32 b;
+    uint32 c;
+    double d;
+} s1, s2;
+
 FSeek(0x800);
 if (!FEof()) byte points1[numPoints]  <comment="ch 1 data points">;
 if (!FEof()) byte points2[numPoints]  <comment="ch 2 data points">;
