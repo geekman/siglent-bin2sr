@@ -31,6 +31,7 @@ type Header struct {
 }
 
 var (
+	debug       = flag.Bool("debug", false, "output some debugging data")
 	use_10x     = flag.Bool("10x", false, "apply 10x multiplier")
 	writeRaw    = flag.Bool("raw", false, "write a raw values file")
 	applyOffset = flag.Bool("offset", true, "apply offset to values")
@@ -188,9 +189,9 @@ func main() {
 		}
 
 		// compute points for key horiz points for debugging
-		//hDivPoints := uint(dataSpec.Points) / 14
-		//mid1Pt := hDivPoints / 2
-		//mid2Pt := mid1Pt + hDivPoints
+		hDivPoints := uint(dataSpec.Points) / 14
+		mid1Pt := hDivPoints / 2
+		mid2Pt := mid1Pt + hDivPoints
 
 		valueScaler := scale * 10.7 / 256
 
@@ -212,11 +213,13 @@ func main() {
 			v2 := float64(int(v)-128) * valueScaler
 			v2 -= offset
 
-			//if i >= mid1Pt && i <= mid1Pt+5 {
-			//	fmt.Printf("%03d %f -> %f\n", v, v2, float32(v2))
-			//} else if i >= mid2Pt && i <= mid2Pt+5 {
-			//	fmt.Printf("%03d %f -> %f\n", v, v2, float32(v2))
-			//}
+			if *debug {
+				if i >= mid1Pt && i <= mid1Pt+5 {
+					fmt.Printf("%03d % .6f\n", v, v2)
+				} else if i >= mid2Pt && i <= mid2Pt+5 {
+					fmt.Printf("%03d % .6f\n", v, v2)
+				}
+			}
 
 			// writes converted raw values directly to output file
 			err = output.Write(float32(v2))
